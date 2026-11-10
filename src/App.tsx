@@ -335,10 +335,14 @@ function App() {
       if (message?.type !== 'entity.update') return;
       const payload = message.payload;
       if (payload?.entity_type === 'community' && payload?.entity_id === 'global') {
+        const incoming = payload.data as ChatMessage;
+        const notificationKey = 'classbridge:chat-notified:' + incoming.id;
+        if (incoming.userId !== user.userId && !localStorage.getItem(notificationKey)) {
+          addNotification('New community message', incoming.authorName + ' posted a message in the school community.');
+          localStorage.setItem(notificationKey, '1');
+        }
         setChatMessages(current => {
-          const incoming = payload.data as ChatMessage;
           if (current.some(item => item.id === incoming.id)) return current;
-          if (incoming.userId !== user.userId) addNotification('New community message', incoming.authorName + ' posted a message in the school community.');
           return [...current, incoming].slice(-100);
         });
       }
