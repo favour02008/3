@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "1087876678468",
+    "project_id": "classbrigde-95004",
+    "storage_bucket": "classbrigde-95004.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087876678468:android:dff33a9e69faa4b5894d11",
+        "android_client_info": {
+          "package_name": "Com.classbridge.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1087876678468-r0l3venrhcjbe6678ip43icg4kucv3ii.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFbCPjWFrxoHYFybIabBhrlIvvVc8CLBQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1087876678468-r0l3venrhcjbe6678ip43icg4kucv3ii.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1087876678468:android:ca716aaff57553c6894d11",
+        "android_client_info": {
+          "package_name": "com.classbridge.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1087876678468-r0l3venrhcjbe6678ip43icg4kucv3ii.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFbCPjWFrxoHYFybIabBhrlIvvVc8CLBQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1087876678468-r0l3venrhcjbe6678ip43icg4kucv3ii.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
