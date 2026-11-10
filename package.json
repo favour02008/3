@@ -14,7 +14,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@capacitor/core": "^7.4.3",
-    "@capacitor/android": "^7.4.3"
+    "@capacitor/android": "^7.4.3",
+    "firebase": "^12.5.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.0.0"
