@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { auth, api, ws } from '@appdeploy/client';
 import {
   BookOpen,
@@ -119,6 +121,7 @@ function App() {
     try { return JSON.parse(localStorage.getItem('classbridge:notifications') || '[]') as AppNotification[]; } catch { return []; }
   });
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notificationToast, setNotificationToast] = useState<{ title: string; message: string } | null>(null);
   const [liveDuration, setLiveDuration] = useState('60');
   const [section, setSection] = useState('overview');
   const [mobileNav, setMobileNav] = useState(false);
@@ -160,7 +163,9 @@ function App() {
       localStorage.setItem('classbridge:notifications', JSON.stringify(next));
       return next;
     });
-    if ('Notification' in window && Notification.permission === 'granted') {
+    setNotificationToast({ title, message });
+    window.setTimeout(() => setNotificationToast(current => current?.title === title && current?.message === message ? null : current), 5500);
+    if (!Capacitor.isNativePlatform() && 'Notification' in window && Notification.permission === 'granted' && document.visibilityState === 'visible') {
       try { new Notification(title, { body: message, icon: '/favicon.ico' }); } catch {}
     }
   }
@@ -173,11 +178,25 @@ function App() {
     });
   }
 
-  function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') addNotification('Notifications enabled', 'ClassBridge can now alert you about important classroom updates.');
-      });
+  async function requestNotificationPermission() {
+    try {
+      if (Capacitor.isNativePlatform()) {
+        let permission = await PushNotifications.checkPermissions();
+        if (permission.receive !== 'granted') permission = await PushNotifications.requestPermissions();
+        if (permission.receive === 'granted') {
+          await PushNotifications.register();
+          setNotice('Push notifications enabled. This device is registering with Firebase Cloud Messaging.');
+        } else {
+          setNotice('Notifications were not enabled. You can allow them later in Android Settings.');
+        }
+        return;
+      }
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') addNotification('Notifications enabled', 'ClassBridge can now show alerts while this browser is open.');
+      }
+    } catch (e) {
+      setError('Could not enable notifications on this device. Check notification permissions and try again.');
     }
   }
 
@@ -325,6 +344,40 @@ function App() {
     window.addEventListener('online', syncWhenOnline);
     if (navigator.onLine) syncWhenOnline();
     return () => window.removeEventListener('online', syncWhenOnline);
+  }, [user?.userId]);
+
+  useEffect(() => {
+    if (!user || !Capacitor.isNativePlatform()) return;
+    let active = true;
+    const handles: Array<{ remove: () => Promise<void> }> = [];
+    (async () => {
+      try {
+        handles.push(await PushNotifications.addListener('registration', token => {
+          if (!active) return;
+          // The app server must securely associate this FCM token with the signed-in user.
+          localStorage.setItem('classbridge:fcm-token', token.value);
+          setNotice('This device is registered for push notifications.');
+        }));
+        handles.push(await PushNotifications.addListener('registrationError', () => {
+          if (active) setError('Push notification registration failed. Check Firebase Android setup.');
+        }));
+        handles.push(await PushNotifications.addListener('pushNotificationReceived', notification => {
+          if (active) addNotification(notification.title || 'ClassBridge update', notification.body || 'You have a new classroom notification.');
+        }));
+        handles.push(await PushNotifications.addListener('pushNotificationActionPerformed', () => {
+          if (active) {
+            setNotificationsOpen(true);
+            setSection('overview');
+          }
+        }));
+      } catch {
+        if (active) setError('Could not start push notifications on this device.');
+      }
+    })();
+    return () => {
+      active = false;
+      handles.forEach(handle => { void handle.remove(); });
+    };
   }, [user?.userId]);
 
   useEffect(() => {
@@ -903,10 +956,15 @@ function App() {
             </div>
           </div>
         </header>
+        {notificationToast && <div className="notification-toast" role="status" onClick={() => setNotificationsOpen(true)}>
+          <span className="notification-toast-icon"><Bell size={18} /></span>
+          <span className="notification-toast-copy"><b>{notificationToast.title}</b><small>{notificationToast.message}</small></span>
+          <button aria-label="Dismiss notification" onClick={event => { event.stopPropagation(); setNotificationToast(null); }}>×</button>
+        </div>}
         {notificationsOpen && <section className="notification-panel" aria-label="Notifications">
           <div className="notification-panel-head"><b>Notifications</b><button className="text-btn" onClick={markNotificationsRead}>Mark all read</button></div>
           {notifications.length === 0 ? <p className="notification-empty">You're all caught up.</p> : notifications.map(item => <article className="notification-item" key={item.id}><b>{item.title}</b><p>{item.message}</p><small>{new Date(item.createdAt).toLocaleString()}</small></article>)}
-          {'Notification' in window && Notification.permission === 'default' && <button className="enable-notifications" onClick={requestNotificationPermission}>Enable device notifications</button>}
+          {(Capacitor.isNativePlatform() ? !localStorage.getItem('classbridge:fcm-token') : ('Notification' in window && Notification.permission !== 'granted')) && <button className="enable-notifications" onClick={requestNotificationPermission}>Enable device notifications</button>}
         </section>}
         <div className="content">
           {error && (
