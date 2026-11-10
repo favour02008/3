@@ -197,7 +197,8 @@ export const handler = router({
         const urls = paths.length ? await storage.url(paths) : [];
         return json({ messages: records.map(m => ({ ...m, avatarUrl: urls.find(u => u.path === m.avatarPath)?.url })) });
       } catch (e) { return error(e instanceof Error ? e.message : 'Could not load community messages.', 403); }
-    },  ],
+    },
+  ],
   'POST /api/community/messages': [
     ...userOnly,
     async ctx => {
@@ -296,8 +297,7 @@ export const handler = router({
           403
         );
       }
-    },
-  ],
+    },  ],
   'POST /api/classes/join': [
     ...userOnly,
     async ctx => {
@@ -396,7 +396,8 @@ export const handler = router({
           teacherId: ctx.user!.userId,
           createdAt: new Date().toISOString(),
         };
-        const [id] = await db.add('attendance_sessions', [record]);        if (!id) return error('Could not start attendance.', 500);
+        const [id] = await db.add('attendance_sessions', [record]);
+        if (!id) return error('Could not start attendance.', 500);
         return json({ ...record, id }, 201);
       } catch (e) {
         return error(

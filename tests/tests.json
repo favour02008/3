@@ -1,0 +1,111 @@
+[
+  {
+    "name": "Administrator access remains secure",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "branded opening splash screen",
+      "Google authentication",
+      "administrator role",
+      "protected user management"
+    ],
+    "description": "Confirms the ClassBridge opening screen is branded and the configured owner can access administration.",
+    "steps": [
+      "Open ClassBridge and confirm the splash screen displays Built by Favour",
+      "Sign in as the configured administrator",
+      "Open User management"
+    ],
+    "expected": "Administrator tools are available."
+  },
+  {
+    "name": "Student profile and picture persist",
+    "viewport": "mobile",
+    "covers": [
+      "profile editing",
+      "profile picture upload",
+      "avatar persistence"
+    ],
+    "description": "Checks that a student can update their display name and photo.",
+    "steps": [
+      "Sign in as an approved student",
+      "Open My profile",
+      "Change name and upload an image",
+      "Save and refresh"
+    ],
+    "expected": "The updated name and picture remain visible."
+  },
+  {
+    "name": "Community chat sends live messages",
+    "viewport": "mobile",
+    "covers": [
+      "community chat",
+      "message persistence",
+      "live updates",
+      "sender name and role"
+    ],
+    "description": "Checks that approved members can exchange messages.",
+    "steps": [
+      "Sign in as an approved student",
+      "Open Community chat",
+      "Send a message",
+      "Open the chat as another approved member"
+    ],
+    "expected": "The message appears with the sender's name and role."
+  },
+  {
+    "name": "Teacher uploads class materials",
+    "viewport": "desktop",
+    "covers": [
+      "material upload",
+      "storage",
+      "classroom access filtering",
+      "student file access"
+    ],
+    "description": "Checks classroom-specific material sharing.",
+    "steps": [
+      "Sign in as an approved teacher",
+      "Select a classroom",
+      "Upload a supported PDF",
+      "Open Class material as an enrolled student"
+    ],
+    "expected": "The file is listed and can be opened by enrolled students."
+  },
+  {
+    "name": "Student shares ClassBridge links",
+    "viewport": "mobile",
+    "covers": [
+      "student-only Share ClassBridge section",
+      "share website link",
+      "share app link",
+      "copy ClassBridge link"
+    ],
+    "description": "Checks that students can share or copy the ClassBridge website and app-entry links.",
+    "steps": [
+      "Sign in as an approved student",
+      "Open Share ClassBridge",
+      "Use Share website link and Copy app link"
+    ],
+    "expected": "The device share sheet opens where supported, or the correct ClassBridge link is copied; the section explains that a separate APK is not yet available."
+  },
+  {
+    "name": "Existing classroom workflows remain available",
+    "viewport": "desktop",
+    "covers": [
+      "classroom creation",
+      "assignment publishing",
+      "attendance sessions",
+      "attendance marking",
+      "teacher creates Google Meet live class session",
+      "student joins a published live class",
+      "student marks attendance",
+      "student attendance totals and missed class summary"
+    ],
+    "description": "Protects existing classroom, assignment, live lesson and attendance workflows.",
+    "steps": [
+      "Create a classroom",
+      "Publish an assignment",
+      "Start an attendance session"
+    ],
+    "expected": "Existing classroom, assignment, live class and attendance features continue to work."
+  }
+]
