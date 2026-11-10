@@ -601,6 +601,22 @@ function App() {
               <br />
               when we learn.
             </div>
+            <div className="student-photo-strip" aria-label="Students learning together">
+              <img
+                src="https://images.unsplash.com/photo-1758270705317-3ef6142d306f?auto=format&fit=crop&w=900&q=82"
+                alt="A diverse group of students working together on a laptop"
+                loading="lazy"
+              />
+              <img
+                src="https://images.unsplash.com/photo-1758270705290-62b6294dd044?auto=format&fit=crop&w=900&q=82"
+                alt="Students collaborating on a classroom project"
+                loading="lazy"
+              />
+              <div className="student-photo-caption">
+                <strong>Learn together</strong>
+                <span>Share ideas. Build your future.</span>
+              </div>
+            </div>
             <div className="mini-grid">
               <div>
                 <BookOpen />
@@ -778,8 +794,7 @@ function App() {
                           : 'Assignments'}
             </h1>
           </div>
-          <div className="user-chip">
-            {profile?.avatarUrl ? <img className="avatar-photo" src={profile.avatarUrl} alt="Profile" /> : <div className="avatar">{(profile?.name || user.name || user.email || 'U').charAt(0).toUpperCase()}</div>}
+          <div className="user-chip">            {profile?.avatarUrl ? <img className="avatar-photo" src={profile.avatarUrl} alt="Profile" /> : <div className="avatar">{(profile?.name || user.name || user.email || 'U').charAt(0).toUpperCase()}</div>}
             <div>
               <b>{profile?.name || user.name || 'Welcome'}</b>
               <small>{profile?.role || 'Pending approval'}</small>
@@ -794,7 +809,8 @@ function App() {
             </div>
           )}
           {notice && (
-            <div className="notice banner">              <CheckCircle2 size={17} /> {notice}
+            <div className="notice banner">
+              <CheckCircle2 size={17} /> {notice}
               <button onClick={() => setNotice('')}>×</button>
             </div>
           )}
@@ -977,8 +993,7 @@ function App() {
                     placeholder="Assignment title"
                     value={assignmentTitle}
                     onChange={e => setAssignmentTitle(e.target.value)}
-                  />
-                  <textarea
+                  />                  <textarea
                     placeholder="Instructions for students"
                     value={assignmentDesc}
                     onChange={e => setAssignmentDesc(e.target.value)}
@@ -993,7 +1008,8 @@ function App() {
                       <option value={c.id} key={c.id}>
                         {c.name}
                       </option>
-                    ))}                  </select>
+                    ))}
+                  </select>
                   <label>Due date</label>
                   <input
                     type="date"
@@ -1176,8 +1192,7 @@ function App() {
             </section>
           )}
           {section === 'materials' && role !== 'pending' && (
-            <section>
-              <div className="section-heading"><div><h2>Class material</h2><p>Notes, presentations, worksheets and other files shared by teachers and administrators.</p></div></div>
+            <section>              <div className="section-heading"><div><h2>Class material</h2><p>Notes, presentations, worksheets and other files shared by teachers and administrators.</p></div></div>
               {(role === 'teacher' || role === 'admin') && <form className="form-card material-upload" onSubmit={uploadMaterial}><h3>Upload class material</h3><input value={materialTitle} onChange={e => setMaterialTitle(e.target.value)} placeholder="Material title (optional)" /><select required value={materialClass} onChange={e => setMaterialClass(e.target.value)}><option value="">Choose classroom</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><input id="material-file" type="file" required accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.png,.jpg,.jpeg" onChange={e => setMaterialFile(e.target.files?.[0] || null)} /><small>PDF, Office documents, text files or images. Maximum 8 MB per file.</small><button className="primary-btn" disabled={busy || !materialFile}>Upload material</button></form>}
               <div className="material-grid">{materials.map(item => <article className="material-card" key={item.id}><div className="material-icon"><BookOpen /></div><div className="material-info"><h3>{item.title}</h3><p>{item.className} · {item.fileName}</p><small>Shared by {item.uploaderName} · {new Date(item.createdAt).toLocaleDateString()}</small></div><a className="primary-btn material-download" href={item.url} target="_blank" rel="noreferrer">Open file <ArrowRight size={15} /></a></article>)}{materials.length === 0 && <div className="empty-state">No class materials have been uploaded yet.</div>}</div>
             </section>
@@ -1192,7 +1207,8 @@ function App() {
                 <div className="search-box">
                   <Search size={16} />
                   <input
-                    placeholder="Search users"                    value={search}
+                    placeholder="Search users"
+                    value={search}
                     onChange={e => setSearch(e.target.value)}
                   />
                 </div>
