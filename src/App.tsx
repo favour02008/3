@@ -735,11 +735,10 @@ function App() {
               school administrators to keep everything connected.
             </p>
             <button className="primary-btn large" onClick={signIn}>
-              Continue with Google <ArrowRight size={18} />
+              Continue with Email <ArrowRight size={18} />
             </button>
             <small>
-              Secure sign-in powered by Google. No password is shared with
-              ClassBridge.
+              Sign in securely using your email address. Google sign-in is disabled.
             </small>
             {error && <div className="error">{error}</div>}
           </div>
@@ -984,7 +983,7 @@ function App() {
               <Clock3 size={30} />
               <h2>Your account is awaiting approval</h2>
               <p>
-                Your Google account is signed in, but an administrator needs to
+                Your email account is signed in, but an administrator needs to
                 assign your role before you can use the classroom tools.
               </p>
               <button className="outline-btn" onClick={() => action(loadData)}>
