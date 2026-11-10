@@ -14,10 +14,10 @@ import { getFirestore } from 'firebase/firestore';
 // Firebase web configuration is a public client identifier, not a service-account
 // credential. Never place service-account JSON or private keys in this app.
 const firebaseConfig = {
-  apiKey: 'AIzaSyCxzBYXEY3glaC1KXRT4Z3IQmXsEMzKCE',
-  authDomain: 'classbridge-95004.firebaseapp.com',
-  projectId: 'classbridge-95004',
-  storageBucket: 'classbridge-95004.firebasestorage.app',
+  apiKey: 'AIzaSyCxzBYXEY3glaClKXRT4Z3IQmXsEMzCkCE',
+  authDomain: 'classbrigde-95004.firebaseapp.com',
+  projectId: 'classbrigde-95004',
+  storageBucket: 'classbrigde-95004.firebasestorage.app',
   messagingSenderId: '1087876678468',
   appId: '1:1087876678468:web:54cbbe2792f4ce64894d11',
   measurementId: 'G-XSJVK5R7T1',
