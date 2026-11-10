@@ -22,6 +22,7 @@ import {
   Link2,
   Share2,
   Copy,
+  Bell,
 } from 'lucide-react';
 
 type User = { userId: string; email?: string; name?: string; picture?: string };
@@ -49,7 +50,8 @@ type Assignment = {
   teacherId: string;
 };
 type Session = { id: string; classId: string; code: string; createdAt: string };
-type LiveClass = { id: string; classId: string; title: string; meetingUrl: string; scheduledAt: string; teacherName: string; createdAt: string };
+type LiveClass = { id: string; classId: string; title: string; meetingUrl: string; scheduledAt: string; teacherName: string; createdAt: string; durationMinutes?: number; expiresAt?: string };
+type AppNotification = { id: string; title: string; message: string; createdAt: string; read: boolean };
 type AttendanceSummary = { classId: string; className: string; total: number; attended: number; missed: number; records: { id: string; createdAt: string; attended: boolean }[] };
 type Attendance = {
   id: string;
@@ -113,6 +115,11 @@ function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => {
+    try { return JSON.parse(localStorage.getItem('classbridge:notifications') || '[]') as AppNotification[]; } catch { return []; }
+  });
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [liveDuration, setLiveDuration] = useState('60');
   const [section, setSection] = useState('overview');
   const [mobileNav, setMobileNav] = useState(false);
   const [classes, setClasses] = useState<Classroom[]>([]);
@@ -145,6 +152,34 @@ function App() {
   const [materialTitle, setMaterialTitle] = useState('');
   const [materialClass, setMaterialClass] = useState('');
   const socketRef = useRef<ReturnType<typeof ws.connect> | null>(null);
+
+  function addNotification(title: string, message: string) {
+    const item: AppNotification = { id: String(Date.now()) + '-' + Math.random().toString(36).slice(2), title, message, createdAt: new Date().toISOString(), read: false };
+    setNotifications(current => {
+      const next = [item, ...current].slice(0, 40);
+      localStorage.setItem('classbridge:notifications', JSON.stringify(next));
+      return next;
+    });
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try { new Notification(title, { body: message, icon: '/favicon.ico' }); } catch {}
+    }
+  }
+
+  function markNotificationsRead() {
+    setNotifications(current => {
+      const next = current.map(item => ({ ...item, read: true }));
+      localStorage.setItem('classbridge:notifications', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') addNotification('Notifications enabled', 'ClassBridge can now alert you about important classroom updates.');
+      });
+    }
+  }
 
   async function loadData() {
     try {
@@ -203,6 +238,10 @@ function App() {
     let active = true;
     (async () => {
       try {
+        // Keep the app's cached classroom data from being evicted where supported.
+        if ('storage' in navigator && 'persist' in navigator.storage) {
+          await navigator.storage.persist().catch(() => false);
+        }
         const current = await auth.getUser();
         if (active && current) {
           setUser(current);
@@ -365,6 +404,7 @@ function App() {
         setNotice('Class saved on this device. It will sync when you reconnect.');
       } else {
         await api.post('/api/classes', { name: className, subject });
+        addNotification('New classroom created', className + ' is now available in ClassBridge.');
         setNotice('Your classroom has been created.');
         await loadData();
       }
@@ -401,6 +441,7 @@ function App() {
         setNotice('Assignment saved on this device. It will publish when you reconnect.');
       } else {
         await api.post('/api/assignments', body);
+        addNotification('New assignment published', assignmentTitle + ' is now available.');
         setNotice('Assignment published.');
         await loadData();
       }
@@ -421,12 +462,44 @@ function App() {
   async function createLiveClass(e: React.FormEvent) {
     e.preventDefault();
     await action(async () => {
-      const result = await api.post('/api/live-classes', { classId: liveClass, title: liveTitle.trim(), meetingUrl: meetingUrl.trim(), scheduledAt: liveScheduledAt });
-      setLiveSessions(current => [result.data.session, ...current]);
-      setLiveTitle(''); setMeetingUrl(''); setLiveScheduledAt('');
+      const durationMinutes = Math.max(5, Math.min(480, Number(liveDuration) || 60));
+      const startsAt = liveScheduledAt ? new Date(liveScheduledAt) : new Date();
+      const expiresAt = new Date(startsAt.getTime() + durationMinutes * 60000).toISOString();
+      const result = await api.post('/api/live-classes', { classId: liveClass, title: liveTitle.trim(), meetingUrl: meetingUrl.trim(), scheduledAt: liveScheduledAt, durationMinutes, expiresAt });
+      const savedSession = { ...result.data.session, durationMinutes: result.data.session?.durationMinutes || durationMinutes, expiresAt: result.data.session?.expiresAt || expiresAt };
+      setLiveSessions(current => [savedSession, ...current]);
+      localStorage.setItem('classbridge:live-classes', JSON.stringify([savedSession, ...liveSessions]));
+      addNotification('Live class scheduled', liveTitle.trim() + ' will be available for ' + durationMinutes + ' minutes.');
+      setLiveTitle(''); setMeetingUrl(''); setLiveScheduledAt(''); setLiveDuration('60');
       setNotice('Live class session created. Students in this classroom can now join.');
     });
   }
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    const refreshLiveClasses = async () => {
+      if (!navigator.onLine) return;
+      try {
+        const result = await api.get('/api/live-classes');
+        if (!active) return;
+        const incoming = (result.data.sessions || []) as LiveClass[];
+        const knownIds = new Set(liveSessions.map(item => item.id));
+        incoming.forEach(item => {
+          if (!knownIds.has(item.id)) addNotification('New live class available', item.title + ' has been posted for your classroom.');
+        });
+        const now = Date.now();
+        const available = incoming.filter(item => {
+          const expiry = item.expiresAt ? new Date(item.expiresAt).getTime() : new Date(item.scheduledAt || item.createdAt).getTime() + (Number(item.durationMinutes) || 60) * 60000;
+          return Number.isFinite(expiry) && expiry > now;
+        });
+        setLiveSessions(available);
+        localStorage.setItem('classbridge:live-classes', JSON.stringify(available));
+      } catch {}
+    };
+    const timer = window.setInterval(refreshLiveClasses, 30000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [user?.userId]);
 
   async function markAttendance(e: React.FormEvent) {
     e.preventDefault();
@@ -794,6 +867,10 @@ function App() {
                           : 'Assignments'}
             </h1>
           </div>
+          <button className="notification-bell" aria-label="Open notifications" onClick={() => { setNotificationsOpen(value => !value); markNotificationsRead(); }}>
+            <Bell size={20} />
+            {notifications.some(item => !item.read) && <span className="notification-count">{notifications.filter(item => !item.read).length}</span>}
+          </button>
           <div className="user-chip">            {profile?.avatarUrl ? <img className="avatar-photo" src={profile.avatarUrl} alt="Profile" /> : <div className="avatar">{(profile?.name || user.name || user.email || 'U').charAt(0).toUpperCase()}</div>}
             <div>
               <b>{profile?.name || user.name || 'Welcome'}</b>
@@ -801,6 +878,11 @@ function App() {
             </div>
           </div>
         </header>
+        {notificationsOpen && <section className="notification-panel" aria-label="Notifications">
+          <div className="notification-panel-head"><b>Notifications</b><button className="text-btn" onClick={markNotificationsRead}>Mark all read</button></div>
+          {notifications.length === 0 ? <p className="notification-empty">You're all caught up.</p> : notifications.map(item => <article className="notification-item" key={item.id}><b>{item.title}</b><p>{item.message}</p><small>{new Date(item.createdAt).toLocaleString()}</small></article>)}
+          {'Notification' in window && Notification.permission === 'default' && <button className="enable-notifications" onClick={requestNotificationPermission}>Enable device notifications</button>}
+        </section>}
         <div className="content">
           {error && (
             <div className="error banner">
@@ -1053,12 +1135,16 @@ function App() {
                 <select required value={liveClass} onChange={e => setLiveClass(e.target.value)}><option value="">Choose classroom</option>{classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
                 <input required type="url" value={meetingUrl} onChange={e => setMeetingUrl(e.target.value)} placeholder="Paste Google Meet link (https://meet.google.com/...)" />
                 <label>Session date and time</label><input type="datetime-local" value={liveScheduledAt} onChange={e => setLiveScheduledAt(e.target.value)} />
+                <label>Class duration (minutes)</label><input type="number" min="5" max="480" required value={liveDuration} onChange={e => setLiveDuration(e.target.value)} placeholder="60" />
                 <button className="primary-btn" disabled={busy || !liveClass}>Publish live session</button>
               </form>}
-              <div className="assignment-list">{liveSessions.map(session => <article className="assignment-card" key={session.id}>
-                <div className="assignment-icon"><Video /></div><div><h3>{session.title}</h3><p>{classes.find(c => c.id === session.classId)?.name || 'Classroom'} · {session.teacherName}</p><small>{session.scheduledAt ? new Date(session.scheduledAt).toLocaleString() : 'Time not specified'}</small></div>
+              <div className="assignment-list">{liveSessions.filter(session => {
+                const expiry = session.expiresAt ? new Date(session.expiresAt).getTime() : new Date(session.scheduledAt || session.createdAt).getTime() + (Number(session.durationMinutes) || 60) * 60000;
+                return Number.isFinite(expiry) && expiry > Date.now();
+              }).map(session => <article className="assignment-card" key={session.id}>
+                <div className="assignment-icon"><Video /></div><div><h3>{session.title}</h3><p>{classes.find(c => c.id === session.classId)?.name || 'Classroom'} · {session.teacherName}</p><small>{session.scheduledAt ? new Date(session.scheduledAt).toLocaleString() : 'Starts now'} · {session.durationMinutes || 60} min · Ends {new Date(session.expiresAt || (new Date(session.scheduledAt || session.createdAt).getTime() + (Number(session.durationMinutes) || 60) * 60000)).toLocaleTimeString()}</small></div>
                 <a className="primary-btn material-download" href={session.meetingUrl} target="_blank" rel="noreferrer">Join meeting <ExternalLink size={15} /></a>
-              </article>)}{liveSessions.length === 0 && <div className="empty-state">No live class sessions have been posted yet.</div>}</div>
+              </article>)}{liveSessions.filter(session => { const expiry = session.expiresAt ? new Date(session.expiresAt).getTime() : new Date(session.scheduledAt || session.createdAt).getTime() + (Number(session.durationMinutes) || 60) * 60000; return Number.isFinite(expiry) && expiry > Date.now(); }).length === 0 && <div className="empty-state">No available live class sessions right now. Expired sessions are automatically hidden.</div>}</div>
             </section>
           )}
           {section === 'myAttendance' && role === 'student' && (
