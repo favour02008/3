@@ -18,4 +18,4 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build ClassBridge
-        run: npm run build
+        run: npm run build:ci
