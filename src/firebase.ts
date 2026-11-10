@@ -10,6 +10,7 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 
 // Firebase web configuration is a public client identifier, not a service-account
 // credential. Never place service-account JSON or private keys in this app.
@@ -21,11 +22,14 @@ const firebaseConfig = {
   messagingSenderId: '1087876678468',
   appId: '1:1087876678468:web:54cbbe2792f4ce64894d11',
   measurementId: 'G-XSJVK5R7T1',
+  // Realtime Database URL copied from the Firebase Console.
+  databaseURL: 'https://classbrigde-95004-default-rtdb.firebaseio.com',
 };
 
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebaseApp);
 export const firestore = getFirestore(firebaseApp);
+export const realtimeDb = getDatabase(firebaseApp);
 export const googleProvider = new GoogleAuthProvider();
 
 googleProvider.setCustomParameters({ prompt: 'select_account' });
