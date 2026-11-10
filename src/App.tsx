@@ -193,7 +193,12 @@ function App() {
       const nextAssignments = data.data.assignments || [];
       const nextSessions = data.data.sessions || [];
       const liveData = await api.get('/api/live-classes');
-      setLiveSessions(liveData.data.sessions || []);
+      const now = Date.now();
+      const availableLiveSessions = (liveData.data.sessions || []).filter((item: LiveClass) => {
+        const expiry = item.expiresAt ? new Date(item.expiresAt).getTime() : new Date(item.scheduledAt || item.createdAt).getTime() + (Number(item.durationMinutes) || 60) * 60000;
+        return Number.isFinite(expiry) && expiry > now;
+      });
+      setLiveSessions(availableLiveSessions);
       if (nextProfile.role === 'student') {
         const summaryData = await api.get('/api/attendance/summary');
         setAttendanceSummary(summaryData.data.summary || []);
@@ -204,7 +209,7 @@ function App() {
       localStorage.setItem('classbridge:dashboard', JSON.stringify({
         classes: nextClasses, assignments: nextAssignments, sessions: nextSessions
       }));
-      localStorage.setItem('classbridge:live-classes', JSON.stringify(liveData.data.sessions || []));
+      localStorage.setItem('classbridge:live-classes', JSON.stringify(availableLiveSessions));
       if (nextProfile.role === 'student') localStorage.setItem('classbridge:attendance-summary', JSON.stringify(attendanceSummary));
       if (nextProfile.role === 'admin') {
         const people = await api.get('/api/admin/users');
@@ -484,15 +489,13 @@ function App() {
         const result = await api.get('/api/live-classes');
         if (!active) return;
         const incoming = (result.data.sessions || []) as LiveClass[];
-        const knownIds = new Set(liveSessions.map(item => item.id));
-        incoming.forEach(item => {
-          if (!knownIds.has(item.id)) addNotification('New live class available', item.title + ' has been posted for your classroom.');
-        });
         const now = Date.now();
         const available = incoming.filter(item => {
           const expiry = item.expiresAt ? new Date(item.expiresAt).getTime() : new Date(item.scheduledAt || item.createdAt).getTime() + (Number(item.durationMinutes) || 60) * 60000;
           return Number.isFinite(expiry) && expiry > now;
         });
+        const previousIds = new Set((JSON.parse(localStorage.getItem('classbridge:live-classes') || '[]') as LiveClass[]).map(item => item.id));
+        available.forEach(item => { if (!previousIds.has(item.id)) addNotification('New live class available', item.title + ' has been posted for your classroom.'); });
         setLiveSessions(available);
         localStorage.setItem('classbridge:live-classes', JSON.stringify(available));
       } catch {}
