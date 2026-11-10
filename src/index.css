@@ -1372,3 +1372,19 @@ a[href*="chatgpt.com"], a[href*="chat.openai.com"] {
 [aria-label*="openai" i], [title*="openai" i] {
   display: none !important;
 }
+
+
+/* Animated in-app notification toast */
+.notification-bell { transition: transform .18s ease, box-shadow .18s ease; }
+.notification-bell:hover { transform: translateY(-1px); box-shadow: 0 7px 18px #7057e822; }
+.notification-bell:has(.notification-count) { animation: notification-bell-pulse 2.2s ease-in-out infinite; }
+@keyframes notification-bell-pulse { 0%, 100% { box-shadow: 0 0 0 0 #ef5c7922; } 50% { box-shadow: 0 0 0 6px #ef5c790c; } }
+.notification-toast { position: fixed; z-index: 80; top: 18px; right: 18px; width: min(380px, calc(100vw - 28px)); display: flex; align-items: center; gap: 11px; padding: 13px 14px; border: 1px solid #e8e8ff; border-radius: 16px; color: #273452; background: #fff; box-shadow: 0 16px 45px #1c2a4b2b; animation: notification-toast-in .32s cubic-bezier(.2,.8,.2,1) both; cursor: pointer; }
+.notification-toast-icon { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 12px; color: #fff; background: linear-gradient(135deg,#7057e8,#3988ef,#14a99b); }
+.notification-toast-copy { min-width: 0; display: grid; gap: 4px; flex: 1; }
+.notification-toast-copy b { font-size: 12px; }
+.notification-toast-copy small { color: #77849a; font-size: 11px; line-height: 1.4; }
+.notification-toast > button { border: 0; background: transparent; color: #8490a4; font-size: 21px; cursor: pointer; }
+@keyframes notification-toast-in { from { opacity: 0; transform: translate3d(0,-12px,0) scale(.98); } to { opacity: 1; transform: translate3d(0,0,0) scale(1); } }
+@media (max-width: 650px) { .notification-toast { top: 10px; right: 10px; } }
+@media (prefers-reduced-motion: reduce) { .notification-bell, .notification-toast { animation: none !important; transition: none !important; } }
