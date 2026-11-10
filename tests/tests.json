@@ -5,13 +5,16 @@
     "viewport": "desktop",
     "covers": [
       "branded opening splash screen",
+      "colorful student-friendly landing page",
+      "student learning photo collage",
       "Google authentication",
       "administrator role",
       "protected user management"
     ],
-    "description": "Confirms the ClassBridge opening screen is branded and the configured owner can access administration.",
+    "description": "Confirms the colorful ClassBridge landing page, student photo collage and branded opening screen display before the configured owner accesses administration.",
     "steps": [
       "Open ClassBridge and confirm the splash screen displays Built by Favour",
+      "Continue to the landing page and confirm the student photo collage and colorful role cards are visible",
       "Sign in as the configured administrator",
       "Open User management"
     ],
