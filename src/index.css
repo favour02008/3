@@ -1366,3 +1366,9 @@ a[href*="chatgpt.com"], a[href*="chat.openai.com"] {
   .notification-panel { top: 76px; right: 12px; }
   .notification-bell { width: 36px; height: 36px; }
 }
+
+/* Also cover common OpenAI launcher identifiers used by embedded toolbars. */
+[id*="openai" i], [class*="openai" i],
+[aria-label*="openai" i], [title*="openai" i] {
+  display: none !important;
+}
