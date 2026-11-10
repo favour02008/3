@@ -338,6 +338,7 @@ function App() {
         setChatMessages(current => {
           const incoming = payload.data as ChatMessage;
           if (current.some(item => item.id === incoming.id)) return current;
+          if (incoming.userId !== user.userId) addNotification('New community message', incoming.authorName + ' posted a message in the school community.');
           return [...current, incoming].slice(-100);
         });
       }
@@ -486,6 +487,14 @@ function App() {
     const refreshLiveClasses = async () => {
       if (!navigator.onLine) return;
       try {
+        const dashboardResult = await api.get('/api/dashboard');
+        if (!active) return;
+        const oldDashboard = JSON.parse(localStorage.getItem('classbridge:dashboard') || '{}');
+        const oldClassIds = new Set((oldDashboard.classes || []).map((item: Classroom) => item.id));
+        const oldAssignmentIds = new Set((oldDashboard.assignments || []).map((item: Assignment) => item.id));
+        (dashboardResult.data.classes || []).forEach((item: Classroom) => { if (!oldClassIds.has(item.id)) addNotification('New classroom available', item.name + ' has been added to ClassBridge.'); });
+        (dashboardResult.data.assignments || []).forEach((item: Assignment) => { if (!oldAssignmentIds.has(item.id)) addNotification('New assignment published', item.title + ' is ready to view.'); });
+        localStorage.setItem('classbridge:dashboard', JSON.stringify({ classes: dashboardResult.data.classes || [], assignments: dashboardResult.data.assignments || [], sessions: dashboardResult.data.sessions || [] }));
         const result = await api.get('/api/live-classes');
         if (!active) return;
         const incoming = (result.data.sessions || []) as LiveClass[];
@@ -496,6 +505,15 @@ function App() {
         });
         const previousIds = new Set((JSON.parse(localStorage.getItem('classbridge:live-classes') || '[]') as LiveClass[]).map(item => item.id));
         available.forEach(item => { if (!previousIds.has(item.id)) addNotification('New live class available', item.title + ' has been posted for your classroom.'); });
+        const notifiedStarts = new Set(JSON.parse(localStorage.getItem('classbridge:live-start-notified') || '[]') as string[]);
+        available.forEach(item => {
+          const startsAt = new Date(item.scheduledAt || item.createdAt).getTime();
+          if (Number.isFinite(startsAt) && startsAt <= now && !notifiedStarts.has(item.id)) {
+            addNotification('Your live class is now ongoing', item.title + ' is ready to join.');
+            notifiedStarts.add(item.id);
+          }
+        });
+        localStorage.setItem('classbridge:live-start-notified', JSON.stringify([...notifiedStarts]));
         setLiveSessions(available);
         localStorage.setItem('classbridge:live-classes', JSON.stringify(available));
       } catch {}
